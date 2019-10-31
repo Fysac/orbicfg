@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
 
     uint32_t config_len = ((uint32_t *)buf)[1];
     assert(HEADER_SIZE + config_len <= MAX_HEADER_AND_CONFIG_SIZE);
-    assert(config_len > 0 && config_len % sizeof(unsigned int) == 0);
+    assert(config_len > 0 && config_len % sizeof(uint32_t) == 0);
 
     // Seed given to uClibc srand() to generate XOR keystream.
     // Often 0x20131224 or 0x23091293.
@@ -54,8 +54,8 @@ int main(int argc, char *argv[]) {
     uclibc_srandom(rand_magic);
 
     // XOR every 4 bytes with the next call to uClibc rand().
-    unsigned int *p = (unsigned int *)(buf + HEADER_SIZE);
-    while (p < (unsigned int *)(buf + HEADER_SIZE + config_len)) {
+    uint32_t *p = (uint32_t *)(buf + HEADER_SIZE);
+    while (p < (uint32_t *)(buf + HEADER_SIZE + config_len)) {
         *p = *p ^ uclibc_random();
         p++;
     }
