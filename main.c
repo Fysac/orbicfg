@@ -7,9 +7,10 @@
 // Definitions for uClibc's rand(3) implementation.
 #include "uclibc/random.h"
 
-// Backups downloaded from the admin interface pretend to be a tar archive.
+// Configuration settings downloaded from the admin interface pretend to be a tar archive.
+#define WEB_CONFIG_TAR_NAME "photos.tar"
 // The real encrypted data is at this offset.
-#define CONFIG_OFFSET_IN_FILE 0x000a0000
+#define WEB_CONFIG_OFFSET 0xa0000
 
 // Format: [magic (4 bytes), config length (4 bytes), crc (4 bytes)]
 // Values are stored little-endian.
@@ -36,9 +37,15 @@ int main(int argc, char *argv[]) {
     }
 
     memset(buf, 0, MAX_HEADER_AND_CONFIG_SIZE);
-    if (fseek(f, CONFIG_OFFSET_IN_FILE, SEEK_SET) < 0) {
-        perror("fseek");
-        return EXIT_FAILURE;
+
+    fread(buf, strlen(WEB_CONFIG_TAR_NAME), 1, f);
+    if (!strncmp((char *) buf, WEB_CONFIG_TAR_NAME, strlen(WEB_CONFIG_TAR_NAME))) {
+        if (fseek(f, WEB_CONFIG_OFFSET, SEEK_SET) < 0) {
+            perror("fseek");
+            return EXIT_FAILURE;
+        }
+    } else {
+        rewind(f);
     }
 
     fread(buf, MAX_HEADER_AND_CONFIG_SIZE, 1, f);
