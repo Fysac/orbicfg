@@ -1,7 +1,6 @@
 # orbicfg
 
-This tool was designed to decrypt Netgear Orbi configuration backups. 
-It has been tested against the RBR50 (firmware version 2.3.5.30) but probably works on other versions and products, too (the Nighthawk line is a likely candidate).
+This tool was designed to decrypt Netgear Orbi configuration backups. It has been tested against the RBR50 (firmware version 2.3.5.30).
 
 ## Usage
 `./orbicfg <config backup (e.g. NETGEAR_Orbi.cfg)>`
