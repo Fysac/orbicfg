@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
     }
 
     fread(buf, strlen(WEB_CONFIG_TAR_NAME), 1, f);
-    if (!strncmp((char *) buf, WEB_CONFIG_TAR_NAME, strlen(WEB_CONFIG_TAR_NAME))) {
+    if (!memcmp(buf, WEB_CONFIG_TAR_NAME, strlen(WEB_CONFIG_TAR_NAME))) {
         if (fseek(f, WEB_CONFIG_OFFSET, SEEK_SET) < 0) {
             perror("fseek");
             return EXIT_FAILURE;
