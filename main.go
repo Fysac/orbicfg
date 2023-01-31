@@ -90,7 +90,11 @@ func main() {
 		}
 		l.Printf("Using 0x%08x as magic\n", uint32(magic))
 
-		encryptedConfig := cfg.Encrypt(decryptedConfig, uint32(magic))
+		encryptedConfig, err := cfg.Encrypt(decryptedConfig, uint32(magic))
+		if err != nil {
+			l.Fatalf("%v: %v\n", *encryptFile, err)
+		}
+
 		if err := writeFileNoTrunc(*outputFile, encryptedConfig); err != nil {
 			l.Fatal(err)
 		}

@@ -81,7 +81,14 @@ func Decrypt(encryptedConfig []byte, ignoreChecksum bool) (*Header, []byte, erro
 	return header, rawConfig, nil
 }
 
-func Encrypt(rawConfig []byte, magic uint32) []byte {
+func Encrypt(rawConfig []byte, magic uint32) ([]byte, error) {
+	if len(rawConfig) == 0 {
+		return nil, errors.New("config is empty")
+	}
+	if len(rawConfig)%chunkSize != 0 {
+		return nil, errors.New("config length is not divisible by chunk size")
+	}
+
 	header := Header{
 		Magic: magic,
 		Len:   uint32(len(rawConfig)),
@@ -96,7 +103,7 @@ func Encrypt(rawConfig []byte, magic uint32) []byte {
 		binary.LittleEndian.PutUint32(ct[i:], result)
 	}
 	encryptedConfig := append(header.Bytes(), ct...)
-	return prependJunk(encryptedConfig)
+	return prependJunk(encryptedConfig), nil
 }
 
 func ToJSON(rawConfig []byte) ([]byte, error) {

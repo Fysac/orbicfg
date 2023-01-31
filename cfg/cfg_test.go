@@ -82,7 +82,10 @@ func TestEncryptDecrypt(t *testing.T) {
 	if err != nil {
 		t.Fatalf("from json: %v", err)
 	}
-	encryptedConfig := Encrypt(rawConfig, magic)
+	encryptedConfig, err := Encrypt(rawConfig, magic)
+	if err != nil {
+		t.Fatalf("encrypt: %v", err)
+	}
 
 	// Decrypt the modified config back into JSON and load it into a map
 	_, rawConfig, err = Decrypt(encryptedConfig, false)
@@ -136,4 +139,81 @@ func decryptFile(t *testing.T, encryptedFile string, ignoreChecksum bool) (*Head
 		t.Fatalf("decrypt: %v", err)
 	}
 	return header, rawConfig
+}
+
+func FuzzDecrypt(f *testing.F) {
+	jsonConfig, err := basicJSONConfig()
+	if err != nil {
+		f.Fatal(err)
+	}
+	rawConfig, err := FromJSON(jsonConfig)
+	if err != nil {
+		f.Fatal(err)
+	}
+
+	encryptedConfig, err := Encrypt(rawConfig, magic)
+	if err != nil {
+		f.Fatalf("encrypt: %v", err)
+	}
+
+	f.Add(encryptedConfig)
+	myHeader := Header{Len: 10, Magic: 0xeeeeeeee, Crc: 42}
+	f.Add(append(myHeader.Bytes(), bytes.Repeat([]byte{0}, 10)...))
+
+	f.Fuzz(func(t *testing.T, b []byte) {
+		Decrypt(b, false)
+		Decrypt(b, true)
+	})
+}
+
+func FuzzEncrypt(f *testing.F) {
+	jsonConfig, err := basicJSONConfig()
+	if err != nil {
+		f.Fatal(err)
+	}
+	rawConfig, err := FromJSON(jsonConfig)
+	if err != nil {
+		f.Fatal(err)
+	}
+
+	f.Add(rawConfig, magic)
+	f.Fuzz(func(t *testing.T, b []byte, i int) {
+		Encrypt(b, uint32(i))
+	})
+}
+
+func FuzzToJSON(f *testing.F) {
+	encryptedConfig, err := os.ReadFile(configFromSOAPEncrypted)
+	if err != nil {
+		f.Fatalf("read encrypted config: %v", err)
+	}
+
+	_, rawConfig, err := Decrypt(encryptedConfig, false)
+	if err != nil {
+		f.Fatalf("decrypt: %v", err)
+	}
+
+	f.Add(rawConfig)
+	f.Fuzz(func(t *testing.T, b []byte) {
+		ToJSON(b)
+	})
+}
+
+func FuzzFromJSON(f *testing.F) {
+	jsonConfig, err := basicJSONConfig()
+	if err != nil {
+		f.Fatal(err)
+	}
+	f.Add(jsonConfig)
+	f.Fuzz(func(t *testing.T, b []byte) {
+		FromJSON(b)
+	})
+}
+
+func basicJSONConfig() ([]byte, error) {
+	myConfigMap := orderedmap.New[string, string]()
+	myConfigMap.Set("key1", "value1")
+	myConfigMap.Set("key2", "value2")
+	myConfigMap.Set("thelastkey", "thelastvalue")
+	return myConfigMap.MarshalJSON()
 }
