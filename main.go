@@ -59,7 +59,7 @@ func main() {
 		}
 
 		fmt.Println("Decrypted to", getAbsPath(*outputFile))
-		fmt.Printf("Magic number is: %v\nPass this value in -magic to re-encrypt the config\n", header.Magic)
+		fmt.Printf("Magic number is: 0x%08x\nPass this value in -magic to re-encrypt the config\n", header.Magic)
 	} else if *encryptFile != "" {
 		if *outputFile == "" {
 			l.Println("-encrypt needs an output file")
