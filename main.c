@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
         exit(-1);
     }
 
-    printf("using magic: 0x%08x\n", config->magic);
+    fprintf(stderr, "using magic: 0x%08x\n", config->magic);
 
     // Seed given to musl srand() to generate XOR keystream.
     // Often 0x20131224 or 0x23091293.
