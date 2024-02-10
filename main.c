@@ -3,9 +3,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Definitions for uClibc's rand(3) implementation.
-#include "uclibc/random.h"
-
 // Configuration settings downloaded from the admin interface pretend to be a tar archive.
 #define WEB_CONFIG_TAR_NAME "photos.tar"
 // The real encrypted data is at this offset.
@@ -57,20 +54,21 @@ int main(int argc, char *argv[]) {
         exit(-1);
     }
 
-    // Seed given to uClibc srand() to generate XOR keystream.
-    // Often 0x20131224 or 0x23091293.
-    uclibc_srandom(config->magic);
+    printf("using magic: 0x%08x\n", config->magic);
 
-    // XOR every 4 bytes with the next call to uClibc rand().
+    // Seed given to musl srand() to generate XOR keystream.
+    // Often 0x20131224 or 0x23091293.
+    srand(config->magic);
+
+    // XOR every 4 bytes with the next call to musl rand().
     uint32_t *p = (uint32_t *) (buf + sizeof(config_header));
     while (p < (uint32_t *) (buf + config->len + sizeof(config_header))) {
-        *p = *p ^ uclibc_random();
+        *p = *p ^ rand();
         p++;
     }
 
     if (!validate_checksum(config)) {
-        fprintf(stderr, "invalid checksum (0x%08x)\n", config->crc);
-        exit(-1);
+        fprintf(stderr, "invalid checksum (0x%08x), continuing anyway\n", config->crc);
     }
 
     for (int i = sizeof(config_header); i < config->len + sizeof(config_header); i++) {
