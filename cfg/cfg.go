@@ -123,13 +123,13 @@ func ToJSON(rawConfig []byte) ([]byte, error) {
 
 		mapping := bytes.Split(entry, []byte{'='})
 		if len(mapping) != 2 {
-			return nil, fmt.Errorf("missing or improper '=' separator in config: %v", entry)
+			return nil, errors.New("missing or improper '=' separator in config entry")
 		}
 		key := string(mapping[0])
 		value := string(mapping[1])
 
 		if _, present := jsonConfig.Get(key); present {
-			return nil, fmt.Errorf("config has duplicate key: %v", key)
+			return nil, errors.New("config has duplicate key")
 		}
 		jsonConfig.Set(key, value)
 	}
