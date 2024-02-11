@@ -54,7 +54,13 @@ int main(int argc, char *argv[]) {
         exit(-1);
     }
 
-    fprintf(stderr, "using magic: 0x%08x\n", config->magic);
+    if (config->magic == 0x01346231) {
+        // HACK
+        fprintf(stderr, "magic in header is 0x%08x, but we'll use 0x01346232\n", config->magic);
+        config->magic = 0x01346232;
+    } else {
+        fprintf(stderr, "using magic: 0x%08x\n", config->magic);
+    }
 
     // Seed given to musl srand() to generate XOR keystream.
     // Often 0x20131224 or 0x23091293.
@@ -69,6 +75,7 @@ int main(int argc, char *argv[]) {
 
     if (!validate_checksum(config)) {
         fprintf(stderr, "invalid checksum (0x%08x), continuing anyway\n", config->crc);
+        exit(-1);
     }
 
     for (int i = sizeof(config_header); i < config->len + sizeof(config_header); i++) {
