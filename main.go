@@ -17,7 +17,7 @@ func main() {
 	l := log.New(os.Stderr, "", 0)
 
 	decryptFile := flag.String("decrypt", "", "file to decrypt (requires: -out)")
-	ignoreChecksum := flag.Bool("ignore-checksum", false, "decrypt without verifying checksum")
+	ignoreChecksum := flag.Bool("ignore-checksum", false, "don't verify checksum when decrypting (not recommended, use for debugging only)")
 	encryptFile := flag.String("encrypt", "", "file to encrypt (requires: -out, -magic)")
 	magicNumber := flag.String("magic", "", "magic number to use for encryption")
 	raw := flag.Bool("raw", false, "operate on raw bytes instead of json (use with caution)")
@@ -38,13 +38,8 @@ func main() {
 
 		header, decryptedConfig, err := cfg.Decrypt(b, *ignoreChecksum)
 		if err != nil {
-			l.Println("decrypt error:", err)
-			if err.Error() == cfg.ErrorInvalidChecksum {
-				l.Println("Try again with -ignore-checksum?")
-			} else {
-				l.Println(openIssueMsg)
-			}
-			os.Exit(1)
+			l.Println("error decrypting config:", err)
+			l.Fatalln(openIssueMsg)
 		}
 
 		if !*raw {
