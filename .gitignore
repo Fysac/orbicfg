@@ -1,2 +1,2 @@
 orbicfg
-*.cfg
+cfg/testdata/fuzz
