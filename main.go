@@ -2,25 +2,22 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"os"
-	"path/filepath"
-	"strconv"
 
 	"github.com/fysac/orbicfg/cfg"
 )
 
-const openIssueMsg = "Please open an issue at https://github.com/Fysac/orbicfg/issues. Include the error message above and the model of your device"
+const openIssueMsg = `
+Please open a bug report at https://github.com/Fysac/orbicfg/issues.
+Include the exact command that failed, the error message, and the the model and firmware version of your device.`
 
 func main() {
 	l := log.New(os.Stderr, "", 0)
 
 	decryptFile := flag.String("decrypt", "", "file to decrypt (requires: -out)")
-	ignoreChecksum := flag.Bool("ignore-checksum", false, "don't verify checksum when decrypting (not recommended, use for debugging only)")
 	encryptFile := flag.String("encrypt", "", "file to encrypt (requires: -out, -magic)")
-	magicNumber := flag.String("magic", "", "magic number to use for encryption")
-	raw := flag.Bool("raw", false, "operate on raw bytes instead of json (use with caution)")
+	raw := flag.Bool("raw", false, "decrypt the raw bytes to a Base64-encoded field")
 	outputFile := flag.String("out", "", "output file for decryption or encryption")
 	flag.Parse()
 
@@ -35,77 +32,48 @@ func main() {
 		if err != nil {
 			l.Fatal(err)
 		}
-
-		header, decryptedConfig, err := cfg.Decrypt(b, *ignoreChecksum)
+		_, configBytes, metadata, err := cfg.Decrypt(b)
 		if err != nil {
-			l.Println("error decrypting config:", err)
+			l.Println("decrypt config:", err)
+			l.Fatalln(openIssueMsg)
+		}
+		wrapperJSON, err := cfg.ToJSON(configBytes, metadata, *raw)
+		if err != nil {
+			l.Println("create json wrapper:", err)
 			l.Fatalln(openIssueMsg)
 		}
 
-		if !*raw {
-			decryptedConfig, err = cfg.ToJSON(decryptedConfig)
-			if err != nil {
-				l.Println("config to json:", err)
-				l.Fatalln(openIssueMsg)
-			}
-		}
-		if err := writeFileNoTrunc(*outputFile, decryptedConfig); err != nil {
+		if err := writeFileNoTrunc(*outputFile, wrapperJSON); err != nil {
 			l.Fatal(err)
 		}
-
-		fmt.Println("Decrypted to", getAbsPath(*outputFile))
-		fmt.Printf("Magic number is: 0x%08x\nPass this value in -magic to re-encrypt the config\n", header.Magic)
 	} else if *encryptFile != "" {
 		if *outputFile == "" {
 			l.Println("-encrypt needs an output file")
 			flag.Usage()
 			os.Exit(1)
 		}
-		if *magicNumber == "" {
-			l.Println("-encrypt needs a magic number")
-			flag.Usage()
-			os.Exit(1)
-		}
 
-		decryptedConfig, err := os.ReadFile(*encryptFile)
+		wrapperJSON, err := os.ReadFile(*encryptFile)
 		if err != nil {
 			l.Fatal(err)
 		}
-
-		if !*raw {
-			decryptedConfig, err = cfg.FromJSON(decryptedConfig)
-			if err != nil {
-				l.Fatalf("%v: %v\n", getAbsPath(*encryptFile), err)
-			}
-		}
-
-		magic, err := strconv.ParseUint(*magicNumber, 0, 32)
+		configBytes, metadata, err := cfg.FromJSON(wrapperJSON)
 		if err != nil {
-			l.Fatal(err)
+			l.Fatalln("parse json wrapper:", err)
 		}
-		l.Printf("Using 0x%08x as magic\n", uint32(magic))
-
-		encryptedConfig, err := cfg.Encrypt(decryptedConfig, uint32(magic))
+		encryptedConfig, err := cfg.Encrypt(configBytes, metadata)
 		if err != nil {
-			l.Fatalf("%v: %v\n", *encryptFile, err)
+			l.Println("encrypt config:", err)
+			l.Fatalln(openIssueMsg)
 		}
 
 		if err := writeFileNoTrunc(*outputFile, encryptedConfig); err != nil {
 			l.Fatal(err)
 		}
-		fmt.Println("Wrote encrypted config to", getAbsPath(*outputFile))
 	} else {
 		flag.Usage()
 		os.Exit(1)
 	}
-}
-
-func getAbsPath(path string) string {
-	abs, err := filepath.Abs(path)
-	if err != nil {
-		panic(err)
-	}
-	return abs
 }
 
 func writeFileNoTrunc(name string, b []byte) error {
