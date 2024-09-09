@@ -1,8 +1,18 @@
 # orbicfg
 orbicfg is a tool that can decrypt and encrypt configuration backups for Orbi routers (and some other Netgear devices).
 
-## Usage
+## Building
+First, make sure [Go is installed](https://go.dev/doc/install). Then run:
 
+```
+git clone https://github.com/Fysac/orbicfg
+cd orbicfg
+go build
+```
+
+These commands will build an `orbicfg` binary in the project directory.
+
+## Usage
 ### Decrypt
 
 ```
