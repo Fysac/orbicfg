@@ -47,7 +47,7 @@ By default, the JSON wrapper may look like:
     },
     "config": {
         "qos_list60": "Unreal-Tourment 1 Unreal-Tourment 1 UDP 7777,27960 7783,27960 ---- ----",
-        ...
+        "..."
     }
 }
 ```
